@@ -2,8 +2,8 @@ import pygame
 from .bullet import Bullets
 
 class Player(pygame.sprite.Sprite):
-    def _init_(self, x, y, screen_width):
-        pygame.sprite.Sprite._init_(self)
+    def __init__(self, x, y, screen_width):
+        pygame.sprite.Sprite.__init__(self)
         self.image = pygame.image.load('assets/images/spaceship.png')
         self.rect = self.image.get_rect()
         self.rect.center = [x, y]
