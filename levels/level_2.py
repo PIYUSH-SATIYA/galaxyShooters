@@ -6,7 +6,7 @@ class Level2(BaseLevel):
     Level 2: Intermediate - "Escalation"
     
     Increased difficulty with:
-    - 10 enemies in two rows (5 per row)
+    - 8 enemies in two rows (4 per row)
     - Faster movement (1.3x speed multiplier)
     - More frequent shooting (1.5x shoot chance multiplier)
     
@@ -21,8 +21,8 @@ class Level2(BaseLevel):
         return "Escalation"
     
     def get_enemy_count(self):
-        """Level 2 has 10 enemies"""
-        return 10
+        """Level 2 has 8 enemies"""
+        return 8
     
     def get_enemy_speed_multiplier(self):
         """Level 2 enemies move 30% faster"""
@@ -34,30 +34,29 @@ class Level2(BaseLevel):
     
     def get_enemy_positions(self):
         """
-        Create two rows of enemies (5 per row).
-        Staggered formation for visual variety.
+        Create two rows of enemies (4 per row).
+        Simple horizontal rows.
         
         Returns:
             List of (x, y) positions for enemies
         """
         positions = []
-        enemies_per_row = 5
-        spacing = 80
+        enemies_per_row = 4
+        spacing = 120
         row_spacing = 60
         
-        # Calculate starting position for first row
-        start_x_row1 = (self.screen_width - (enemies_per_row - 1) * spacing) // 2
+        # Calculate starting position for centered rows
+        start_x = (self.screen_width - (enemies_per_row - 1) * spacing) // 2
         
         # First row (top)
         for i in range(enemies_per_row):
-            x = start_x_row1 + i * spacing
+            x = start_x + i * spacing
             y = 80
             positions.append((x, y))
         
-        # Second row (below, slightly offset for stagger effect)
-        start_x_row2 = start_x_row1 + spacing // 2
+        # Second row (below)
         for i in range(enemies_per_row):
-            x = start_x_row2 + i * spacing
+            x = start_x + i * spacing
             y = 80 + row_spacing
             positions.append((x, y))
         

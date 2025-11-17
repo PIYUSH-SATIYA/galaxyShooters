@@ -6,7 +6,7 @@ class Level1(BaseLevel):
     Level 1: Beginner - "First Contact"
     
     This is the easiest level with:
-    - 5 enemies in a simple horizontal line
+    - 4 enemies in a simple horizontal line
     - Normal speed (1.0x multiplier)
     - Normal shooting frequency (1.0x multiplier)
     
@@ -21,8 +21,8 @@ class Level1(BaseLevel):
         return "First Contact"
     
     def get_enemy_count(self):
-        """Level 1 has 5 enemies"""
-        return 5
+        """Level 1 has 4 enemies"""
+        return 4
     
     def get_enemy_speed_multiplier(self):
         """Level 1 enemies move at normal speed"""
@@ -34,7 +34,7 @@ class Level1(BaseLevel):
     
     def get_enemy_positions(self):
         """
-        Create a simple horizontal line of 5 enemies.
+        Create a simple horizontal line of 4 enemies.
         Evenly spaced across the screen.
         
         Returns:
@@ -42,7 +42,7 @@ class Level1(BaseLevel):
         """
         positions = []
         enemy_count = self.get_enemy_count()
-        spacing = 80
+        spacing = 120  # More spacing for easier gameplay
         start_x = (self.screen_width - (enemy_count - 1) * spacing) // 2
         y_position = 100
         

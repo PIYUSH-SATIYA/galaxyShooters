@@ -6,7 +6,7 @@ class MainMenu(BaseMenu):
     
     def __init__(self, screen_width, screen_height):
         super().__init__(screen_width, screen_height)
-        self.options = ["Start Game", "Quit Game"]
+        self.options = ["Start Game", "Select Level", "Quit Game"]
         self.selected_option = 0
     
     def draw(self, surface):
@@ -25,6 +25,8 @@ class MainMenu(BaseMenu):
         """Execute the selected menu option"""
         if self.selected_option == 0:  # Start Game
             return "START_GAME"
-        elif self.selected_option == 1:  # Quit Game
+        elif self.selected_option == 1:  # Select Level
+            return "SELECT_LEVEL"
+        elif self.selected_option == 2:  # Quit Game
             return "QUIT_GAME"
         return None

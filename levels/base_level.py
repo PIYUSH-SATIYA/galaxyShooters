@@ -38,6 +38,12 @@ class BaseLevel(ABC):
         self.total_enemies = 0
         self.enemies_killed = 0
         
+        # Boss support
+        self.has_boss = self.level_has_boss()
+        self.boss = None
+        self.boss_spawned = False
+        self.enemies_phase_complete = False
+        
     @abstractmethod
     def get_level_name(self):
         """
@@ -69,6 +75,23 @@ class BaseLevel(ABC):
         Must be implemented by subclasses.
         """
         pass
+    
+    def level_has_boss(self):
+        """
+        Return whether this level has a boss.
+        Can be overridden by subclasses (default: False).
+        """
+        return False
+    
+    def create_boss(self):
+        """
+        Create the boss for this level.
+        Should be overridden by subclasses that have bosses.
+        
+        Returns:
+            Boss instance or None if no boss
+        """
+        return None
     
     def create_enemy(self, x, y):
         """
@@ -104,6 +127,11 @@ class BaseLevel(ABC):
         self.total_enemies = len(positions)
         self.enemies_killed = 0
         self.is_complete = False
+        
+        # Reset boss state
+        self.boss = None
+        self.boss_spawned = False
+        self.enemies_phase_complete = False
     
     @abstractmethod
     def get_enemy_positions(self):
@@ -119,13 +147,37 @@ class BaseLevel(ABC):
     def update(self):
         """
         Update the level state.
-        Checks if all enemies are defeated and marks level as complete.
+        Handles both regular enemies and boss encounters.
         """
         self.enemy_group.update()
         
-        # Check if level is complete
-        if len(self.enemy_group) == 0 and not self.is_complete:
+        # Check if all regular enemies are defeated
+        if len(self.enemy_group) == 0 and not self.enemies_phase_complete:
+            self.enemies_phase_complete = True
+            
+            # If this level has a boss, spawn it
+            if self.has_boss and not self.boss_spawned:
+                self.boss = self.create_boss()
+                self.boss_spawned = True
+            elif not self.has_boss:
+                # No boss, level is complete
+                self.is_complete = True
+        
+        # Update boss if it exists
+        if self.boss and not self.boss.is_defeated():
+            self.boss.update()
+        elif self.boss and self.boss.is_defeated() and not self.is_complete:
+            # Boss is defeated, level is complete
             self.is_complete = True
+    
+    def get_boss(self):
+        """
+        Get the current boss instance.
+        
+        Returns:
+            Boss instance or None if no boss or boss not spawned
+        """
+        return self.boss if self.boss_spawned else None
     
     def enemy_killed(self):
         """
@@ -133,6 +185,13 @@ class BaseLevel(ABC):
         Tracks the number of enemies killed for stats/scoring.
         """
         self.enemies_killed += 1
+    
+    def boss_killed(self):
+        """
+        Called when the boss is killed.
+        This can be used for special scoring or effects.
+        """
+        pass  # Default implementation does nothing
     
     def get_progress(self):
         """
@@ -158,6 +217,7 @@ class BaseLevel(ABC):
         Useful for restarting a level.
         """
         self.spawn_enemies()
+        # Boss state will be reset in spawn_enemies()
     
     def get_info(self):
         """

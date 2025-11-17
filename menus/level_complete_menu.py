@@ -8,10 +8,15 @@ class LevelCompleteMenu(BaseMenu):
     def __init__(self, screen_width, screen_height):
         super().__init__(screen_width, screen_height)
         self.current_level = 1
-        self.total_levels = 3
+        self.total_levels = 5  # Updated to 5 levels
         self.level_name = ""
         self.options = ["Restart Level", "Main Menu"]
         self.selected_option = 0
+        
+        # Timer to prevent immediate progression (5 seconds)
+        self.wait_time = 5000  # 5 seconds in milliseconds
+        self.timer = 0
+        self.can_proceed = False
         
     def set_level_info(self, level_number, level_name):
         """
@@ -24,15 +29,39 @@ class LevelCompleteMenu(BaseMenu):
         self.current_level = level_number
         self.level_name = level_name
         
+        # Reset timer
+        self.timer = 0
+        self.can_proceed = False
+        
         # Update options based on whether there's a next level
         if level_number < self.total_levels:
-            self.options = ["Next Level", "Restart Level", "Main Menu"]
+            self.options = ["Next Level", "Restart Level", "Select Level", "Main Menu"]
         else:
             # Last level - no next level option
-            self.options = ["Restart Level", "Main Menu"]
+            self.options = ["Restart Level", "Select Level", "Main Menu"]
         
         # Reset selection to first option
         self.selected_option = 0
+    
+    def update(self, dt):
+        """
+        Update the timer to enable options after 5 seconds.
+        
+        Args:
+            dt: Delta time in milliseconds
+        """
+        if not self.can_proceed:
+            self.timer += dt
+            if self.timer >= self.wait_time:
+                self.can_proceed = True
+    
+    def handle_input(self, event):
+        """Handle menu input navigation - only allow input after timer expires"""
+        if not self.can_proceed:
+            return None
+        
+        # Call parent handle_input method
+        return super().handle_input(event)
     
     def draw(self, surface):
         """Draw the level complete menu"""
@@ -64,23 +93,39 @@ class LevelCompleteMenu(BaseMenu):
         message_rect = message_text.get_rect(center=(self.screen_width // 2, 280 if self.current_level < self.total_levels else 300))
         surface.blit(message_text, message_rect)
         
-        # Draw options
-        self.draw_options(surface)
+        # Draw timer message if still waiting
+        if not self.can_proceed:
+            remaining_time = max(0, (self.wait_time - self.timer) // 1000 + 1)
+            timer_message = f"Please wait {remaining_time} seconds before continuing..."
+            timer_text = self.font_small.render(timer_message, True, self.YELLOW)
+            timer_rect = timer_text.get_rect(center=(self.screen_width // 2, 350))
+            surface.blit(timer_text, timer_rect)
+        else:
+            # Draw options only when timer is done
+            self.draw_options(surface)
         
         # Draw instructions
-        instructions = "Use UP/DOWN or W/S to navigate, ENTER/SPACE to select"
+        if self.can_proceed:
+            instructions = "Use UP/DOWN or W/S to navigate, ENTER/SPACE to select"
+        else:
+            instructions = "Enjoy your victory! Options will be available shortly..."
         instruction_text = self.font_small.render(instructions, True, self.GRAY)
         instruction_rect = instruction_text.get_rect(center=(self.screen_width // 2, self.screen_height - 50))
         surface.blit(instruction_text, instruction_rect)
     
     def execute_option(self):
         """Execute the selected menu option"""
+        if not self.can_proceed:
+            return None
+        
         selected_text = self.options[self.selected_option]
         
         if selected_text == "Next Level":
             return "NEXT_LEVEL"
         elif selected_text == "Restart Level":
             return "RESTART_LEVEL"
+        elif selected_text == "Select Level":
+            return "SELECT_LEVEL"
         elif selected_text == "Main Menu":
             return "MAIN_MENU"
         
