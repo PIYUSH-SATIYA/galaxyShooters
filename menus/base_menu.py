@@ -12,7 +12,6 @@ class BaseMenu(ABC):
         self.font_medium = pygame.font.Font(None, 48)
         self.font_small = pygame.font.Font(None, 36)
         
-        # Color constants
         self.WHITE = (255, 255, 255)
         self.BLACK = (0, 0, 0)
         self.RED = (255, 0, 0)
@@ -21,7 +20,7 @@ class BaseMenu(ABC):
         self.GRAY = (128, 128, 128)
         self.YELLOW = (255, 255, 0)
         
-        # Menu state
+
         self.selected_option = 0
         self.options = []
         
@@ -70,10 +69,10 @@ class BaseMenu(ABC):
     
     @abstractmethod
     def execute_option(self):
-        """Execute the selected menu option - must be implemented by subclasses"""
+        """Execute the selected menu option"""
         pass
     
     @abstractmethod
     def draw(self, surface):
-        """Draw the complete menu - must be implemented by subclasses"""
+        """Draw the complete menun"""
         pass

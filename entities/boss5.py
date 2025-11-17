@@ -3,38 +3,23 @@ from .base_boss import BaseBoss
 
 class Boss5(BaseBoss):
     """
-    Boss 5: "Omega Commander" - Final boss
+    Boss 5: "Omega Commander" - Level 5 final boss
     
     Features:
-    - High health (12 HP) - 12 bullets to kill
-    - Simple horizontal movement
-    - Rapid firing
-    - Gold/yellow color scheme
+    - 12 HP (12 bullets to kill)
+    - Horizontal movement only
+    - Fastest shooting rate
+    - Boss5.jpeg image from assets/images
     
-    The final challenge with increased health but simple mechanics.
+    The final challenge with maximum health and aggressive shooting.
     """
     
     def __init__(self, screen_width, screen_height):
         # Start boss at top center of screen
         x = screen_width // 2
         y = 50
-        super().__init__(x, y, screen_width, screen_height)
-    
-    def get_max_hp(self):
-        """Omega Commander has 12 HP (12 bullets to kill)"""
-        return 12
-    
-    def get_movement_speed(self):
-        """Omega Commander moves at normal speed"""
-        return 2
-    
-    def get_shoot_cooldown(self):
-        """Omega Commander shoots every 600ms (frequent but manageable)"""
-        return 600
-    
-    def get_boss_color(self):
-        """Omega Commander is gold/yellow"""
-        return (255, 215, 0)  # Gold
+        # Initialize with level 5
+        super().__init__(x, y, screen_width, screen_height, level=5)
     
     def get_boss_name(self):
         """Return the name of this boss"""

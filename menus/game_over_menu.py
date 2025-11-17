@@ -9,7 +9,7 @@ class GameOverMenu(BaseMenu):
         super().__init__(screen_width, screen_height)
         self.options = ["Restart Game", "Quit to Main Menu"]
         self.selected_option = 0
-        self.show_delay = 2000  # Show game over text for 2 seconds before showing options
+        self.show_delay = 2000
         self.timer = 0
     
     def update(self, dt):
@@ -24,41 +24,36 @@ class GameOverMenu(BaseMenu):
         """Draw the game over menu"""
         self.draw_background(surface)
         
-        # Always show GAME OVER text
         game_over_text = self.font_large.render("GAME OVER", True, self.RED)
         game_over_rect = game_over_text.get_rect(center=(self.screen_width // 2, 200))
         surface.blit(game_over_text, game_over_rect)
         
-        # Show options only after delay
         if self.timer >= self.show_delay:
             self.draw_options(surface)
             
-            # Draw instructions
             instructions = "Use UP/DOWN or W/S to navigate, ENTER/SPACE to select"
             instruction_text = self.font_small.render(instructions, True, self.GRAY)
             instruction_rect = instruction_text.get_rect(center=(self.screen_width // 2, self.screen_height - 50))
             surface.blit(instruction_text, instruction_rect)
         else:
-            # Show waiting message
+
             waiting_text = self.font_medium.render("Press any key to continue...", True, self.WHITE)
             waiting_rect = waiting_text.get_rect(center=(self.screen_width // 2, 350))
             surface.blit(waiting_text, waiting_rect)
     
     def handle_input(self, event):
         """Handle game over menu input"""
-        # If still in delay period, any key press skips to options
         if self.timer < self.show_delay:
             if event.type == pygame.KEYDOWN:
                 self.timer = self.show_delay
             return None
         
-        # Otherwise, handle normal menu navigation
         return super().handle_input(event)
     
     def execute_option(self):
         """Execute the selected menu option"""
-        if self.selected_option == 0:  # Restart Game
+        if self.selected_option == 0:  
             return "RESTART_GAME"
-        elif self.selected_option == 1:  # Quit to Main Menu
+        elif self.selected_option == 1:
             return "MAIN_MENU"
         return None

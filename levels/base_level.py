@@ -106,7 +106,6 @@ class BaseLevel(ABC):
             Enemy instance configured for this level
         """
         enemy = Enemy(x, y, self.screen_width)
-        # Apply level-specific difficulty modifiers
         enemy.speed *= self.get_enemy_speed_multiplier()
         enemy.shoot_chance *= self.get_enemy_shoot_chance_multiplier()
         return enemy

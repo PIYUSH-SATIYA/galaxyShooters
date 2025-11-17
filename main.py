@@ -49,11 +49,9 @@ def main():
     # Game state
     current_state = MAIN_MENU
     
-    # Level management
     level_manager = LevelManager(screenWidth, screenHeight)
     current_level = None
 
-    # Game variables (initialized when starting game)
     player = None
     player_group = pygame.sprite.Group()
     bullet_group = pygame.sprite.Group()
@@ -178,28 +176,25 @@ def main():
 
         # Update game logic based on current state
         if current_state == PLAYING:
-            # Enemy shooting
+
             for enemy in enemy_group:
                 enemy_bullet = enemy.shoot()
                 if enemy_bullet:
                     enemy_bullet_group.add(enemy_bullet)
             
-            # Boss shooting
             boss = current_level.get_boss() if current_level else None
             if boss and not boss.is_defeated():
                 boss_bullet = boss.update_shooting(dt)
                 if boss_bullet:
-                    if isinstance(boss_bullet, list):  # Multiple bullets (Boss5 phase 3)
+                    if isinstance(boss_bullet, list):
                         for bullet in boss_bullet:
                             enemy_bullet_group.add(bullet)
-                    else:  # Single bullet
+                    else:
                         enemy_bullet_group.add(boss_bullet)
                 
-                # Add boss to boss_group if not already there
                 if boss not in boss_group:
                     boss_group.add(boss)
 
-            # Bullet-enemy collision
             for bullet in bullet_group:
                 hit_enemies = pygame.sprite.spritecollide(bullet, enemy_group, True)
                 if hit_enemies:
@@ -207,21 +202,18 @@ def main():
                     for enemy in hit_enemies:
                         explosion = Explosion(enemy.rect.centerx, enemy.rect.centery)
                         explosion_group.add(explosion)
-                        # Track enemy kill in level
                         current_level.enemy_killed()
             
-            # Bullet-boss collision
             if boss and not boss.is_defeated():
                 hit_bullets = pygame.sprite.spritecollide(boss, bullet_group, True)
                 for bullet in hit_bullets:
-                    if not boss.take_damage(1):  # Boss takes 1 damage per bullet
-                        # Boss is defeated
+                    if not boss.take_damage(1):
+                        
                         explosion = Explosion(boss.rect.centerx, boss.rect.centery)
                         explosion_group.add(explosion)
                         current_level.boss_killed()
                         boss_group.remove(boss)
             
-            # Check if enemies cross the bottom edge (game over)
             for enemy in enemy_group:
                 if enemy.rect.bottom >= screenHeight - 100:  # Near bottom edge
                     explosion = Explosion(player.rect.centerx, player.rect.centery)
@@ -230,14 +222,6 @@ def main():
                     game_over_menu.reset_timer()
                     current_state = GAME_OVER
                     break
-            
-            # Check if boss crosses the bottom edge (game over)
-            if boss and boss.rect.bottom >= screenHeight - 100:
-                explosion = Explosion(player.rect.centerx, player.rect.centery)
-                explosion_group.add(explosion)
-                player.kill()
-                game_over_menu.reset_timer()
-                current_state = GAME_OVER
             
             # Player-enemy bullet collision (game over)
             if pygame.sprite.spritecollide(player, enemy_bullet_group, True):

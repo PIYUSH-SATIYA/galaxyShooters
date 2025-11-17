@@ -34,5 +34,6 @@ class Player(pygame.sprite.Sprite):
         now = pygame.time.get_ticks()
         if now - self.last_shot > self.shoot_delay:
             self.last_shot = now
+            # Play shooting sound effect
             return Bullets(self.rect.centerx, self.rect.top)
         return None

@@ -1,27 +1,29 @@
 from abc import ABC, abstractmethod
 import pygame
 import random
+import os
+from .enemy import Enemy
+from .enemyBullets import EnemyBullet
 
-
-class BaseBoss(pygame.sprite.Sprite, ABC):
+class BaseBoss(Enemy, ABC):
     """
-    Abstract Base Class for all boss enemies.
+    Abstract Base Class for all boss enemies that inherits from Enemy.
     
     This class provides a template for creating bosses with different configurations
     using inheritance and polymorphism. Each boss can customize:
-    - Health points and maximum HP
-    - Movement patterns
+    - Health points (level 3: 5 HP, level 4: 8 HP, level 5: 12 HP)
+    - Boss images from assets/images directory
+    - Stationary behavior (doesn't move down like regular enemies)
     - Shooting patterns
-    - Size and appearance
     
     Design Principles:
+    - Inheritance: Inherits from Enemy class for common functionality
     - Reusability: Common boss logic is implemented once in base class
     - Modularity: Each boss is self-contained with its own configuration
-    - Inheritance: Subclasses inherit common behavior and customize specifics
     - Encapsulation: Boss state and logic are encapsulated in the class
     """
     
-    def __init__(self, x, y, screen_width, screen_height):
+    def __init__(self, x, y, screen_width, screen_height, level):
         """
         Initialize the base boss.
         
@@ -30,77 +32,99 @@ class BaseBoss(pygame.sprite.Sprite, ABC):
             y: Initial y position
             screen_width: Width of the game screen
             screen_height: Height of the game screen
+            level: Boss level (3, 4, or 5)
         """
-        super().__init__()
-        
-        # Position and screen boundaries
-        self.screen_width = screen_width
+        self.level = level
         self.screen_height = screen_height
         
-        # Create boss sprite (placeholder rectangle)
-        self.image = pygame.Surface((80, 60))
-        self.image.fill(self.get_boss_color())
-        self.rect = self.image.get_rect()
+        super().__init__(x, y, screen_width)
+        
+        self._load_boss_image()
+        
         self.rect.centerx = x
         self.rect.y = y
         
-        # Health system
-        self.max_hp = self.get_max_hp()
+        self.max_hp = self._get_max_hp_by_level()
         self.current_hp = self.max_hp
         self.is_alive = True
         
-        # Movement
-        self.speed = self.get_movement_speed()
-        self.direction_x = 1  # 1 for right, -1 for left
-        self.move_timer = 0
+        self.speed = 0 
+        self.move_direction = 1
+        self.move_counter = 0
+        self.horizontal_speed = 2
         
-        # Shooting
-        self.shoot_timer = 0
-        self.shoot_cooldown = self.get_shoot_cooldown()
+    def _load_boss_image(self):
+        """
+        Load the appropriate boss image based on level.
+        """
+        image_path = f"assets/images/boss{self.level}.png"
         
-        # Animation/visual effects
-        self.hit_timer = 0  # For hit flash effect
-        self.original_color = self.get_boss_color()
+        if os.path.exists(image_path):
+            try:
+                # Load and scale the boss image
+                original_image = pygame.image.load(image_path)
+                # Scale the boss image to be larger than regular enemies
+                self.image = pygame.transform.scale(original_image, (120, 90))
+            except pygame.error as e:
+                print(f"Could not load boss image {image_path}: {e}")
+                self._create_fallback_image()
+        else:
+            print(f"Boss image {image_path} not found, using fallback")
+            self._create_fallback_image()
+            
+    def _create_fallback_image(self):
+        """
+        Create a fallback colored rectangle if image loading fails.
+        """
+        self.image = pygame.Surface((120, 90))
+        colors = {3: (255, 0, 0), 4: (255, 165, 0), 5: (128, 0, 128)}
+        self.image.fill(colors.get(self.level, (255, 255, 255)))
         
-    @abstractmethod
-    def get_max_hp(self):
+    def _get_max_hp_by_level(self):
         """
-        Return the maximum health points for this boss.
-        Must be implemented by subclasses.
+        Return the maximum HP based on boss level.
+        
+        Returns:
+            int: Maximum HP (level 3: 5, level 4: 8, level 5: 12)
         """
-        pass
-    
-    @abstractmethod
-    def get_movement_speed(self):
+        hp_mapping = {3: 5, 4: 8, 5: 12}
+        return hp_mapping.get(self.level, 5)
+        
+    def update(self, dt=None):
         """
-        Return the movement speed for this boss.
-        Must be implemented by subclasses.
+        Update boss behavior. Override enemy update to prevent downward movement.
+        
+        Args:
+            dt: Delta time in milliseconds (optional, for compatibility with sprite group updates)
         """
-        pass
-    
-    @abstractmethod
-    def get_shoot_cooldown(self):
+        self.rect.x += self.move_direction * self.horizontal_speed
+        self.move_counter += 1
+        
+        if abs(self.move_counter) > 50:
+            self.move_direction *= -1
+            self.move_counter *= self.move_direction
+        
+        if self.rect.left < 0:
+            self.rect.left = 0
+            self.move_direction = 1
+        if self.rect.right > self.screen_width:
+            self.rect.right = self.screen_width
+            self.move_direction = -1
+            
+    def shoot(self):
         """
-        Return the shooting cooldown in milliseconds.
-        Must be implemented by subclasses.
+        Override enemy shoot method with boss-specific shooting pattern.
+        Bosses shoot more frequently than regular enemies.
+        
+        Returns:
+            EnemyBullet if shooting, None otherwise
         """
-        pass
-    
-    @abstractmethod
-    def get_boss_color(self):
-        """
-        Return the color tuple (R, G, B) for this boss.
-        Must be implemented by subclasses.
-        """
-        pass
-    
-    @abstractmethod
-    def get_boss_name(self):
-        """
-        Return the name of this boss.
-        Must be implemented by subclasses.
-        """
-        pass
+        now = pygame.time.get_ticks()
+        if now - self.last_shot > self.shoot_delay:
+            self.last_shot = now
+            self.shoot_delay = random.randint(500, 1500)
+            return EnemyBullet(self.rect.centerx, self.rect.bottom)
+        return None
     
     def take_damage(self, damage=1):
         """
@@ -113,13 +137,13 @@ class BaseBoss(pygame.sprite.Sprite, ABC):
             True if boss is still alive, False if defeated
         """
         self.current_hp -= damage
-        self.hit_timer = 200  # Flash effect for 200ms
         
         if self.current_hp <= 0:
             self.current_hp = 0
             self.is_alive = False
+            return False
             
-        return self.is_alive
+        return True
     
     def get_hp_percentage(self):
         """
@@ -130,82 +154,15 @@ class BaseBoss(pygame.sprite.Sprite, ABC):
         """
         return self.current_hp / self.max_hp if self.max_hp > 0 else 0.0
     
-    def update_movement(self):
+    def is_defeated(self):
         """
-        Update boss movement pattern.
-        Default implementation: horizontal movement with direction changes at edges.
-        Subclasses can override for different movement patterns.
-        """
-        # Move horizontally
-        self.rect.x += self.speed * self.direction_x
-        
-        # Bounce off screen edges
-        if self.rect.left <= 0:
-            self.direction_x = 1
-            self.rect.left = 0
-        elif self.rect.right >= self.screen_width:
-            self.direction_x = -1
-            self.rect.right = self.screen_width
-    
-    def update_shooting(self, dt):
-        """
-        Update shooting timer and create bullets.
-        
-        Args:
-            dt: Delta time in milliseconds
-            
-        Returns:
-            Bullet sprite if boss shoots, None otherwise
-        """
-        self.shoot_timer += dt
-        
-        if self.shoot_timer >= self.shoot_cooldown:
-            self.shoot_timer = 0
-            return self.create_bullet()
-        
-        return None
-    
-    def create_bullet(self):
-        """
-        Create a bullet from the boss.
-        Subclasses can override for different bullet patterns.
+        Check if boss is defeated.
         
         Returns:
-            Bullet sprite
+            True if boss is defeated, False otherwise
         """
-        from entities.enemyBullets import EnemyBullet
-        return EnemyBullet(self.rect.centerx, self.rect.bottom)
-    
-    def update_visual_effects(self, dt):
-        """
-        Update visual effects like hit flash.
+        return not self.is_alive
         
-        Args:
-            dt: Delta time in milliseconds
-        """
-        if self.hit_timer > 0:
-            self.hit_timer -= dt
-            # Flash effect - alternate between red and original color
-            if (self.hit_timer // 50) % 2:
-                self.image.fill((255, 100, 100))  # Red flash
-            else:
-                self.image.fill(self.original_color)
-        else:
-            self.image.fill(self.original_color)
-    
-    def update(self, dt=16):
-        """
-        Update the boss (movement, shooting, effects).
-        
-        Args:
-            dt: Delta time in milliseconds (default: 16ms for 60 FPS)
-        """
-        if not self.is_alive:
-            return
-        
-        self.update_movement()
-        self.update_visual_effects(dt)
-    
     def draw_hp_bar(self, surface, x, y, width=200, height=20):
         """
         Draw the boss HP bar.
@@ -217,39 +174,45 @@ class BaseBoss(pygame.sprite.Sprite, ABC):
             width: Width of the HP bar
             height: Height of the HP bar
         """
-        # Background (red)
         background_rect = pygame.Rect(x, y, width, height)
-        pygame.draw.rect(surface, (200, 50, 50), background_rect)
+        pygame.draw.rect(surface, (100, 20, 20), background_rect)
         
-        # Health bar (green to red gradient based on HP)
         hp_percentage = self.get_hp_percentage()
         hp_width = int(width * hp_percentage)
         
         if hp_width > 0:
             hp_rect = pygame.Rect(x, y, hp_width, height)
-            # Color changes from green to red as HP decreases
             if hp_percentage > 0.6:
-                color = (50, 200, 50)  # Green
+                color = (50, 200, 50)
             elif hp_percentage > 0.3:
-                color = (200, 200, 50)  # Yellow
+                color = (200, 200, 50)
             else:
-                color = (200, 50, 50)  # Red
+                color = (200, 50, 50)
             pygame.draw.rect(surface, color, hp_rect)
         
-        # Border
         pygame.draw.rect(surface, (255, 255, 255), background_rect, 2)
         
-        # HP text
         font = pygame.font.Font(None, 24)
         hp_text = font.render(f"{self.current_hp}/{self.max_hp}", True, (255, 255, 255))
         text_rect = hp_text.get_rect(center=(x + width // 2, y + height // 2))
         surface.blit(hp_text, text_rect)
-    
-    def is_defeated(self):
-        """
-        Check if the boss is defeated.
         
-        Returns:
-            True if boss is defeated, False otherwise
+    def update_shooting(self, dt):
         """
-        return not self.is_alive
+        Update boss shooting behavior. This method is called by the main game loop.
+        
+        Args:
+            dt: Delta time in milliseconds
+            
+        Returns:
+            EnemyBullet if boss shoots, None otherwise
+        """
+        return self.shoot()
+        
+    @abstractmethod
+    def get_boss_name(self):
+        """
+        Return the name of this boss.
+        Must be implemented by subclasses.
+        """
+        pass
